@@ -8,17 +8,12 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
 
-#Preview {
-    ContentView()
+    @StateObject private var gameVM = GameViewModel()
+    // Todo：@StateObject private var settingsVM = SettingsViewModel()
+    // Todo：@StateObject private var profileVM  = ProfileViewModel()
+
+    var body: some View {
+        MainMenuView(vm: gameVM)
+    }
 }
