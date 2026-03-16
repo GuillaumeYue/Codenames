@@ -15,12 +15,12 @@ Features (Iteration 1)：
 
 Architecture：
 
-The project follows a basic MVVM structure:
-·Domain – Game models and logic (GameService)
-·Presentation – Views and ViewModels
+The project follows a controller-driven SwiftUI structure:
+·Domain – Game models and rules
+·Presentation – Views, `GameController`, and `UIManager`
 ·SwiftUI – User interface
 
-Game logic is separated from UI.
+Gameplay and navigation contracts follow the project diagrams.
 
 
 How to Run：
