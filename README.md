@@ -32,7 +32,7 @@ How to Run：
 
 Author：
 
-Han Yue
-Antonio Moriello
-Apostolos Tsouroupakis
+·Han Yue
+·Antonio Moriello
+·Apostolos Tsouroupakis
 
