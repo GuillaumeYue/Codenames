@@ -13,7 +13,7 @@ struct TeamHeaderView: View {
     var body: some View {
         VStack(spacing: 6) {
             Text("Turn \(game.turnNumber)")
-            Text("Active: \(game.turnState.activeTeam.rawValue.uppercased()) • Phase: \(game.turnState.phase.rawValue)")
+            Text("Active: \(game.turnState.activeTeam.rawValue.uppercased()) • Phase: \(game.turnState.turnPhase.rawValue)")
                 .font(.subheadline)
 
             HStack {

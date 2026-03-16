@@ -32,7 +32,7 @@ struct CardCellView: View {
 
     private var backgroundColor: Color {
         guard card.isRevealed else { return Color(.systemGray6) }
-        switch card.type {
+        switch card.cardType {
         case .red: return .red.opacity(0.35)
         case .blue: return .blue.opacity(0.35)
         case .neutral: return .gray.opacity(0.35)

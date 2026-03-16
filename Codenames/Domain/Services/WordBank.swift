@@ -7,15 +7,29 @@
 
 import Foundation
 
+// Class Diagram, Domain Model, CD-CO2 step 1
 final class WordBank {
-    // Change to .txt or .json afterwards
-    private let words: [String] = [
-        "APPLE","RIVER","MOON","SPIKE","GLASS","TRAIN","KING","CODE","MAP","CLOUD",
-        "FROST","NINJA","PIRATE","BRIDGE","SNOW","PLANE","RING","NOTE","LASER","ROBOT",
-        "JAZZ","WHALE","STONE","CHAIR","BREAD","FIRE","STORM","WIND","PARK","STAR"
-    ]
+    let fileName: String                // Class Diagram, Domain Model
+    let words: [String]                 // Class Diagram, Domain Model
 
-    func randomWords(count: Int) -> [String] {
-        Array(words.shuffled().prefix(count))
+    init(fileName: String = "default") {
+        self.fileName = fileName
+        self.words = [
+            "APPLE","RIVER","MOON","SPIKE","GLASS","TRAIN","KING","CODE","MAP","CLOUD",
+            "FROST","NINJA","PIRATE","BRIDGE","SNOW","PLANE","RING","NOTE","LASER","ROBOT",
+            "JAZZ","WHALE","STONE","CHAIR","BREAD","FIRE","STORM","WIND","PARK","STAR",
+            "BANK","EAGLE","HORN","SHADOW","MERCURY","DIAMOND","CASTLE","ANCHOR","BOLT","SILK",
+            "ORBIT","CRANE","TORCH","MARBLE","GHOST","TEMPLE","CROWN","JUNGLE","IRON","ROCKET"
+        ]
+    }
+
+    // Class Diagram (getRandomWords), CD-CO2 step 1 (selectWords)
+    func getRandomWords() -> [String] {
+        Array(words.shuffled().prefix(25))
+    }
+
+    // Class Diagram (hasWord)
+    func hasWord(_ word: String) -> Bool {
+        words.contains(where: { $0.caseInsensitiveCompare(word) == .orderedSame })
     }
 }

@@ -21,10 +21,13 @@ enum RulesError: Error, LocalizedError {
     }
 }
 
+// CD-CO6 step 1 (validate clueWord), SSD-2 [clue validation]
 struct RulesValidator {
     func validateClue(clueWord: String, clueNumber: Int, board: Board) throws {
         let trimmed = clueWord.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty || trimmed.contains(" ") { throw RulesError.invalidClueWord }
+        if trimmed.isEmpty || trimmed.contains(" ") {
+            throw RulesError.invalidClueWord
+        }
 
         let visibleWords = board.cards
             .filter { !$0.isRevealed }
@@ -34,7 +37,6 @@ struct RulesValidator {
             throw RulesError.clueMatchesVisibleWord
         }
 
-        // Unlimited: -1
         if !(clueNumber == -1 || (0...9).contains(clueNumber)) {
             throw RulesError.invalidNumber
         }
