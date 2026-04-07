@@ -25,7 +25,7 @@ struct CardCellView: View {
                     VStack {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(stripColor)
-                            .frame(height: 6)
+                            .frame(height: 4)
                         Spacer()
                     }
                 }
@@ -34,9 +34,11 @@ struct CardCellView: View {
                     .font(.system(size: 11, weight: .bold))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(textColor)
-                    .padding(4)
+                    .padding(2)
             }
-            .frame(height: 58)
+            // Use flexible height instead of fixed — let the grid decide
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .aspectRatio(1.6, contentMode: .fit)
         }
         .disabled(card.isRevealed)
     }

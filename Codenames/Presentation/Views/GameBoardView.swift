@@ -20,27 +20,39 @@ struct GameBoardView: View {
                 .ignoresSafeArea()
 
             if let game = controller.currentGame {
-                VStack(spacing: 10) {
-                    TeamHeaderView(game: game)
+                VStack(spacing: 4) {
+                    // Compact header + phase in one row
+                    HStack(spacing: 0) {
+                        TeamHeaderView(game: game)
+                    }
 
-                    // Phase input area
+                    // Phase input area — compact
                     if game.turnState.turnPhase == .spymaster {
                         spymasterPanel(game: game)
                     } else {
                         operativePanel(game: game)
                     }
 
-                    // Card grid
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
-                        ForEach(game.board.cards) { card in
-                            CardCellView(card: card) {
-                                controller.selectCard(cardId: card.id)
+                    // Card grid — fills remaining space
+                    GeometryReader { geo in
+                        let spacing: CGFloat = 5
+                        let rows: CGFloat = 5
+                        let availableHeight = geo.size.height
+                        let cardHeight = (availableHeight - spacing * (rows - 1)) / rows
+
+                        LazyVGrid(
+                            columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: 5),
+                            spacing: spacing
+                        ) {
+                            ForEach(game.board.cards) { card in
+                                CardCellView(card: card) {
+                                    controller.selectCard(cardId: card.id)
+                                }
+                                .frame(height: cardHeight)
                             }
                         }
+                        .padding(.horizontal, 8)
                     }
-                    .padding(.horizontal, 10)
-
-                    Spacer()
                 }
                 .id(game.gameId)
             } else {
@@ -56,7 +68,7 @@ struct GameBoardView: View {
                     controller.tapPause()
                 } label: {
                     Image(systemName: "pause.circle.fill")
-                        .font(.title2)
+                        .font(.title3)
                         .foregroundStyle(GameColor.textSecondary)
                 }
             }
@@ -67,105 +79,101 @@ struct GameBoardView: View {
     }
 
     private func spymasterPanel(game: Game) -> some View {
-        VStack(spacing: 8) {
-            Text("SPYMASTER PHASE")
-                .font(.caption.bold())
-                .tracking(2)
+        HStack(spacing: 8) {
+            Text("SPYMASTER")
+                .font(.system(size: 10, weight: .bold))
+                .tracking(1)
                 .foregroundStyle(
                     game.turnState.activeTeam == .red ? GameColor.teamRed : GameColor.teamBlue
                 )
+                .frame(width: 76)
 
-            HStack(spacing: 8) {
-                TextField("Clue Word", text: $clueWord)
-                    .textFieldStyle(.plain)
-                    .padding(10)
-                    .background(GameColor.cardPanel)
-                    .foregroundStyle(GameColor.textPrimary)
+            TextField("Clue Word", text: $clueWord)
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .padding(8)
+                .background(GameColor.cardPanel)
+                .foregroundStyle(GameColor.textPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            TextField("#", text: $clueNumberText)
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .padding(8)
+                .frame(width: 44)
+                .background(GameColor.cardPanel)
+                .foregroundStyle(GameColor.textPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+
+            Button {
+                let n = Int(clueNumberText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 1
+                controller.submitClue(clueWord: clueWord, clueNumber: n)
+                clueWord = ""
+            } label: {
+                Text("SUBMIT")
+                    .font(.system(size: 13, weight: .bold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(GameColor.buttonGreen)
+                    .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                TextField("#", text: $clueNumberText)
-                    .textFieldStyle(.plain)
-                    .padding(10)
-                    .frame(width: 56)
-                    .background(GameColor.cardPanel)
-                    .foregroundStyle(GameColor.textPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.center)
-
-                Button {
-                    let n = Int(clueNumberText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 1
-                    controller.submitClue(clueWord: clueWord, clueNumber: n)
-                    clueWord = ""
-                } label: {
-                    Text("SUBMIT")
-                        .font(.subheadline.bold())
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(GameColor.buttonGreen)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
             }
-            .padding(.horizontal, 12)
 
             if let err = controller.errorMessage {
                 Text(err)
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(GameColor.teamRed)
-                    .padding(.horizontal)
+                    .lineLimit(1)
             }
         }
-        .padding(.vertical, 8)
-        .background(GameColor.panelBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(GameColor.panelBackground)
     }
 
     private func operativePanel(game: Game) -> some View {
-        VStack(spacing: 6) {
-            Text("OPERATIVE PHASE")
-                .font(.caption.bold())
-                .tracking(2)
+        HStack(spacing: 12) {
+            Text("OPERATIVE")
+                .font(.system(size: 10, weight: .bold))
+                .tracking(1)
                 .foregroundStyle(
                     game.turnState.activeTeam == .red ? GameColor.teamRed : GameColor.teamBlue
                 )
 
             if let clue = game.turnState.currentClue {
-                HStack(spacing: 12) {
-                    Text(clue.word.uppercased())
-                        .font(.title2.bold())
-                        .foregroundStyle(GameColor.textPrimary)
+                Text(clue.word.uppercased())
+                    .font(.subheadline.bold())
+                    .foregroundStyle(GameColor.textPrimary)
 
-                    Text(clue.isUnlimited ? "∞" : "\(clue.number)")
-                        .font(.title2.bold())
-                        .foregroundStyle(
-                            game.turnState.activeTeam == .red ? GameColor.teamRed : GameColor.teamBlue
-                        )
-                }
+                Text(clue.isUnlimited ? "∞" : "\(clue.number)")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(
+                        game.turnState.activeTeam == .red ? GameColor.teamRed : GameColor.teamBlue
+                    )
             }
 
-            HStack(spacing: 16) {
-                Text("Guesses: \(game.turnState.guessesRemaining == -1 ? "∞" : "\(game.turnState.guessesRemaining)")")
-                    .font(.subheadline)
-                    .foregroundStyle(GameColor.textSecondary)
+            Spacer()
 
-                Button {
-                    controller.passGuessing()
-                } label: {
-                    Text("PASS")
-                        .font(.subheadline.bold())
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(GameColor.buttonGray)
-                        .foregroundStyle(GameColor.textPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
+            Text("Guesses: \(game.turnState.guessesRemaining == -1 ? "∞" : "\(game.turnState.guessesRemaining)")")
+                .font(.caption)
+                .foregroundStyle(GameColor.textSecondary)
+
+            Button {
+                controller.passGuessing()
+            } label: {
+                Text("PASS")
+                    .font(.system(size: 13, weight: .bold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(GameColor.buttonGray)
+                    .foregroundStyle(GameColor.textPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
-        .padding(.vertical, 10)
-        .background(GameColor.panelBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(GameColor.panelBackground)
     }
 }

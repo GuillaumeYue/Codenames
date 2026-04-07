@@ -12,7 +12,7 @@ struct TeamHeaderView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Blue team score
+            // Blue team score badge
             teamScoreBadge(
                 label: "BLUE",
                 score: game.blue.score,
@@ -23,17 +23,15 @@ struct TeamHeaderView: View {
 
             Spacer()
 
-            // Turn indicator
-            VStack(spacing: 2) {
-                Text("TURN \(game.turnNumber)")
-                    .font(.caption2.bold())
-                    .tracking(1)
-                    .foregroundStyle(GameColor.textSecondary)
-            }
+            // Turn indicator — compact single line
+            Text("TURN \(game.turnNumber)")
+                .font(.caption2.bold())
+                .tracking(1)
+                .foregroundStyle(GameColor.textSecondary)
 
             Spacer()
 
-            // Red team score
+            // Red team score badge
             teamScoreBadge(
                 label: "RED",
                 score: game.red.score,
@@ -43,29 +41,26 @@ struct TeamHeaderView: View {
             )
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
         .background(GameColor.panelBackground)
     }
 
     private func teamScoreBadge(label: String, score: Int, target: Int, color: Color, isActive: Bool) -> some View {
-        HStack(spacing: 8) {
-            VStack(spacing: 2) {
-                Text(label)
-                    .font(.caption.bold())
-                    .tracking(1)
-                Text("\(score)/\(target)")
-                    .font(.title3.bold())
-            }
-            .foregroundStyle(.white)
-            .frame(minWidth: 70)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(color)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(isActive ? Color.white : Color.clear, lineWidth: 2)
-            )
+        HStack(spacing: 6) {
+            Text(label)
+                .font(.caption2.bold())
+                .tracking(1)
+            Text("\(score)/\(target)")
+                .font(.subheadline.bold())
         }
+        .foregroundStyle(.white)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .background(color)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(isActive ? Color.white : Color.clear, lineWidth: 2)
+        )
     }
 }
