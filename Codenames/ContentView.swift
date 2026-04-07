@@ -20,11 +20,15 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
+            GameColor.background
+                .ignoresSafeArea()
+
             switch uiManager.currentScreen {
             case "gameBoard":
                 NavigationStack {
                     GameBoardView(controller: gameController)
                 }
+                .id(gameController.currentGame?.gameId)
             case "gameOver":
                 NavigationStack {
                     GameOverView(controller: gameController)
@@ -34,7 +38,9 @@ struct ContentView: View {
                     Text("CODENAMES")
                         .font(.system(size: 42, weight: .black))
                         .tracking(4)
+                        .foregroundStyle(GameColor.textPrimary)
                     ProgressView()
+                        .tint(GameColor.teamBlue)
                 }
             default:
                 MainMenuView(controller: gameController)
@@ -44,6 +50,7 @@ struct ContentView: View {
                 PauseMenuView(controller: gameController)
             }
         }
+        .preferredColorScheme(.dark)
         .sheet(item: $uiManager.presentedModal) { modal in
             switch modal {
             case .howToPlay:

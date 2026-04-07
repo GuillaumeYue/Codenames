@@ -13,22 +13,26 @@ struct PauseMenuView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.5)
+            Color.black.opacity(0.6)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 Text("PAUSED")
-                    .font(.largeTitle.bold())
+                    .font(.system(size: 28, weight: .black))
+                    .tracking(4)
+                    .foregroundStyle(GameColor.textPrimary)
+                    .padding(.bottom, 8)
 
                 // SSD-8 message 2.1: resumeGame()
                 Button {
                     controller.resumeGame()
                 } label: {
-                    Text("Resume")
+                    Text("RESUME")
                         .font(.title3.bold())
+                        .tracking(1)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(.blue)
+                        .padding(.vertical, 14)
+                        .background(GameColor.buttonGreen)
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
@@ -37,12 +41,13 @@ struct PauseMenuView: View {
                 Button {
                     controller.openHowToPlay()
                 } label: {
-                    Text("How to Play")
+                    Text("HOW TO PLAY")
                         .font(.title3)
+                        .tracking(1)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.systemGray5))
-                        .foregroundStyle(.primary)
+                        .padding(.vertical, 14)
+                        .background(GameColor.buttonGray)
+                        .foregroundStyle(GameColor.textPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
@@ -50,12 +55,13 @@ struct PauseMenuView: View {
                 Button {
                     controller.openSettings()
                 } label: {
-                    Text("Settings")
+                    Text("SETTINGS")
                         .font(.title3)
+                        .tracking(1)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.systemGray5))
-                        .foregroundStyle(.primary)
+                        .padding(.vertical, 14)
+                        .background(GameColor.buttonGray)
+                        .foregroundStyle(GameColor.textPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
@@ -63,17 +69,18 @@ struct PauseMenuView: View {
                 Button {
                     controller.requestQuitGame()
                 } label: {
-                    Text("Quit Game")
+                    Text("QUIT GAME")
                         .font(.title3)
+                        .tracking(1)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(.red.opacity(0.15))
-                        .foregroundStyle(.red)
+                        .padding(.vertical, 14)
+                        .background(GameColor.teamRed.opacity(0.2))
+                        .foregroundStyle(GameColor.teamRed)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
-            .padding(32)
-            .background(.regularMaterial)
+            .padding(28)
+            .background(GameColor.panelBackground)
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .padding(.horizontal, 40)
         }

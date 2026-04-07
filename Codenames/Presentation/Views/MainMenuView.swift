@@ -13,31 +13,56 @@ struct MainMenuView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
-                Spacer()
+            ZStack {
+                GameColor.background
+                    .ignoresSafeArea()
 
-                Text("CODENAMES")
-                    .font(.system(size: 42, weight: .black))
-                    .tracking(4)
+                VStack(spacing: 40) {
+                    Spacer()
 
-                VStack(spacing: 16) {
-                    ForEach(controller.mainMenuOptions) { option in
-                        Button {
-                            controller.selectMenuOption(option: option)
-                        } label: {
-                            Text(option.optionName)
-                                .font(.title3.bold())
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(option.destination == "gameBoard" ? .blue : Color(.systemGray5))
-                                .foregroundStyle(option.destination == "gameBoard" ? .white : .primary)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                    // Title
+                    VStack(spacing: 8) {
+                        Text("CODENAMES")
+                            .font(.system(size: 46, weight: .black))
+                            .tracking(6)
+                            .foregroundStyle(GameColor.textPrimary)
+
+                        // Team color accent bar
+                        HStack(spacing: 0) {
+                            GameColor.teamRed
+                            GameColor.teamBlue
+                        }
+                        .frame(height: 4)
+                        .clipShape(Capsule())
+                        .padding(.horizontal, 80)
+                    }
+
+                    // Menu buttons
+                    VStack(spacing: 14) {
+                        ForEach(controller.mainMenuOptions) { option in
+                            Button {
+                                controller.selectMenuOption(option: option)
+                            } label: {
+                                Text(option.optionName.uppercased())
+                                    .font(.title3.bold())
+                                    .tracking(1)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        option.destination == "gameBoard"
+                                            ? GameColor.buttonGreen
+                                            : GameColor.buttonGray
+                                    )
+                                    .foregroundStyle(GameColor.textPrimary)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
                         }
                     }
-                }
-                .padding(.horizontal, 40)
+                    .padding(.horizontal, 40)
 
-                Spacer()
+                    Spacer()
+                    Spacer()
+                }
             }
         }
     }
