@@ -9,7 +9,8 @@ import Foundation
 
 // Class Diagram, Domain Model, CD-CO2, CD-CO3, CD-CO5, CD-CO7, CD-CO10, CD-CO12, CD-CO13
 struct Board: Codable {
-    let gridSize: Int = 5               // Class Diagram, Domain Model (gridSize = 5x5)
+    var gridSize: Int = 5               // Class Diagram, Domain Model (gridSize = 5x5)
+    var boardIsValid: Bool = false      // Domain Model, CD-CO3 step 2 (setBoardIsValid)
     var cards: [Card]                   // Class Diagram (contains 25 Card)
 
     // Class Diagram (generateBoard), CD-CO2 steps 1-3
@@ -22,8 +23,8 @@ struct Board: Codable {
         return Board(cards: cards)
     }
 
-    // Class Diagram (validateBoard), CD-CO3 step 1
-    func validateBoard() -> Bool {
+    // Class Diagram (validate), CD-CO3 step 1
+    mutating func validate() -> Bool {
         guard cards.count == 25 else { return false }
         let unique = Set(cards.map { $0.word.lowercased() })
         guard unique.count == 25 else { return false }
@@ -39,7 +40,13 @@ struct Board: Codable {
 
         guard neutralCount == 7, assassinCount == 1 else { return false }
         guard (redCount == 9 && blueCount == 8) || (redCount == 8 && blueCount == 9) else { return false }
+        boardIsValid = true             // CD-CO3 step 2 (setBoardIsValid)
         return true
+    }
+
+    // Iteration 3 - from CD-CO41 handleBoardGenerationError (abortBoardGeneration)
+    mutating func abortBoardGeneration() {
+        boardIsValid = false
     }
 
     // Class Diagram (displayGameBoard), CD-CO5 step 1 (renderBoard uses this)

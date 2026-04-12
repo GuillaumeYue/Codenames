@@ -15,11 +15,13 @@ final class MainMenu: ObservableObject {
     private let menu: Menu
     var options: [MenuOption] { menu.getOptions() }
 
+    // Iteration 3 - from UC-11 View About Information (About added to Main Menu)
     init() {
         self.menu = Menu(menuType: .mainMenu, options: [
             MenuOption(optionName: "New Game", destination: "gameBoard"),
             MenuOption(optionName: "How to Play", destination: "howToPlay"),
-            MenuOption(optionName: "Settings", destination: "settings")
+            MenuOption(optionName: "Settings", destination: "settings"),
+            MenuOption(optionName: "About", destination: "about")
         ])
     }
 

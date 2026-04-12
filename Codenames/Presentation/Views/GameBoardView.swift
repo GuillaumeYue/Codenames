@@ -13,11 +13,15 @@ struct GameBoardView: View {
 
     @State private var clueWord: String = ""
     @State private var clueNumberText: String = "1"
+    @FocusState private var focusedField: Field?
+
+    private enum Field { case clueWord, clueNumber }
 
     var body: some View {
         ZStack {
             GameColor.background
                 .ignoresSafeArea()
+                .onTapGesture { focusedField = nil }
 
             if let game = controller.currentGame {
                 VStack(spacing: 4) {
@@ -46,6 +50,7 @@ struct GameBoardView: View {
                         ) {
                             ForEach(game.board.cards) { card in
                                 CardCellView(card: card) {
+                                    focusedField = nil
                                     controller.selectCard(cardId: card.id)
                                 }
                                 .frame(height: cardHeight)
@@ -95,6 +100,9 @@ struct GameBoardView: View {
                 .background(GameColor.cardPanel)
                 .foregroundStyle(GameColor.textPrimary)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .focused($focusedField, equals: .clueWord)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .clueNumber }
 
             TextField("#", text: $clueNumberText)
                 .textFieldStyle(.plain)
@@ -106,11 +114,16 @@ struct GameBoardView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
+                .focused($focusedField, equals: .clueNumber)
+                .submitLabel(.done)
+                .onSubmit { focusedField = nil }
 
             Button {
+                focusedField = nil
                 let n = Int(clueNumberText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 1
                 controller.submitClue(clueWord: clueWord, clueNumber: n)
                 clueWord = ""
+                clueNumberText = "1"
             } label: {
                 Text("SUBMIT")
                     .font(.system(size: 13, weight: .bold))

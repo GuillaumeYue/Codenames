@@ -46,7 +46,7 @@ struct SettingsView: View {
                             set: { controller.selectTheme($0) }
                         )) {
                             ForEach(ThemeType.allCases, id: \.self) { theme in
-                                Text(theme.rawValue.capitalized).tag(theme)
+                                Text(themeLabel(theme)).tag(theme)
                             }
                         }
                         .pickerStyle(.segmented)
@@ -72,6 +72,17 @@ struct SettingsView: View {
                         .foregroundStyle(GameColor.teamBlue)
                 }
             }
+        }
+    }
+
+    private func themeLabel(_ theme: ThemeType) -> String {
+        switch theme {
+        case .classic:
+            return "System"
+        case .dark:
+            return "Dark"
+        case .light:
+            return "Light"
         }
     }
 }

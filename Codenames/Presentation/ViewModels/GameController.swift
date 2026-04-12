@@ -10,6 +10,7 @@ import SwiftUI
 import Combine
 
 // Class Diagram, CD-CO1 through CD-CO33, SSD-1 through SSD-8
+// Iteration 3 - from CD-CO34 through CD-CO43, SSD-9 through SSD-12
 @MainActor
 final class GameController: ObservableObject {
 
@@ -21,6 +22,11 @@ final class GameController: ObservableObject {
     private let wordBank = WordBank()
     private let validator = RulesValidator()
 
+    // Iteration 3 - from Class Diagram (PersistenceManager, ErrorHandler, RecoveryManager)
+    private let persistenceManager = PersistenceManager()
+    private let errorHandler = ErrorHandler()
+    private lazy var recoveryManager = RecoveryManager(persistenceManager: persistenceManager)
+
     init(uiManager: UIManager) {
         self.uiManager = uiManager
         openApplication()
@@ -31,8 +37,23 @@ final class GameController: ObservableObject {
     }
 
     // Class Diagram (openApplication), CD-CO19, SSD-5 step 1
+    // Iteration 3 - from SSD-10 Restore Game After Termination (check for saved game on launch)
     func openApplication() {
         uiManager.openApplication()
+
+        // Iteration 3 - from SSD-10 step 2 (savedGameDetected)
+        if let savedGame = persistenceManager.readSaveFile() {
+            if persistenceManager.validateChecksum(savedGame) {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .short
+                formatter.timeStyle = .short
+                let timeStr = formatter.string(from: savedGame.createdAt)
+                uiManager.showResumeOrDiscardPrompt(saveId: savedGame.saveId, lastSaveTime: timeStr)
+            } else {
+                // Iteration 3 - from SSD-10 alt [save data valid] step 8 (corruptedSaveDetected)
+                handleCorruptedSave()
+            }
+        }
     }
 
     // Class Diagram (startGameSession), CD-CO1, SSD-1
@@ -41,35 +62,65 @@ final class GameController: ObservableObject {
         let start = Date()
         let (board, keyCard) = generateBoard()   // CD-CO2
 
-        guard validateBoard(board) else {         // CD-CO3
-            errorMessage = "Unable to create a valid board."
-            return
-        }
-
         currentGame = initializeGameState(gameId: gameID, start: start, board: board, keyCard: keyCard) // CD-CO4
         errorMessage = nil
         uiManager.dismissPauseMenu()
         displayGameBoard()                        // CD-CO5
+
+        // Iteration 3 - from UC-09 Save Game State Automatically (initial save)
+        saveAfterStateChange()
     }
 
     // Class Diagram (generateBoard), CD-CO2, SSD-1 step 2.1
     func generateBoard() -> (Board, KeyCard) {
-        while true {
+        // Iteration 3 - from CD-CO40 handleWordBankLoadError (check word bank)
+        if !wordBank.hasSufficientWords() {
+            handleWordBankLoadError()
+        }
+
+        for _ in 0..<20 {
             let words = wordBank.getRandomWords()              // CD-CO2 step 1 (selectWords)
             let startingTeam: TeamColor = Bool.random() ? .red : .blue
-            var keyCard = KeyCard(startingTeam: startingTeam, cardAssignments: [:])
-            keyCard.assignCardTypes()                          // CD-CO2 step 4
-
-            let board = Board.generateBoard(words: words, keyCard: keyCard) // CD-CO2 steps 2-3
-            if validateBoard(board) {
-                return (board, keyCard)
+            if let generated = buildValidatedBoard(words: words, startingTeam: startingTeam) {
+                return generated
             }
         }
+
+        // Iteration 3 - from CD-CO41 handleBoardGenerationError
+        // If repeated generation attempts fail, use a safe fallback board.
+        let message = errorHandler.handleBoardGenerationError()
+        uiManager.displayErrorDialog(message: message)
+        if let fallback = buildValidatedBoard(
+            words: recoveryManager.fallbackToDefaultBank(),
+            startingTeam: Bool.random() ? .red : .blue
+        ) {
+            return fallback
+        }
+
+        // Final guardrail: return a deterministic board instead of blocking startup.
+        var emergencyKeyCard = KeyCard(startingTeam: .red, cardAssignments: [:])
+        emergencyKeyCard.assignCardTypes()
+        let emergencyWords = Array(recoveryManager.fallbackToDefaultBank().prefix(25))
+        let emergencyBoard = Board.generateBoard(words: emergencyWords, keyCard: emergencyKeyCard)
+        return (emergencyBoard, emergencyKeyCard)
     }
 
     // Class Diagram (validateBoard), CD-CO3, SSD-1 step 2.2
-    func validateBoard(_ board: Board) -> Bool {
-        board.validateBoard()                                  // CD-CO3 step 1 (validate)
+    func validateBoard(_ board: inout Board) -> Bool {
+        let result = board.validate()                          // CD-CO3 step 1 (validate)
+        board.boardIsValid = result                            // CD-CO3 step 2 (setBoardIsValid)
+        return result
+    }
+
+    private func buildValidatedBoard(words: [String], startingTeam: TeamColor) -> (Board, KeyCard)? {
+        guard words.count >= 25 else { return nil }
+
+        var keyCard = KeyCard(startingTeam: startingTeam, cardAssignments: [:])
+        keyCard.assignCardTypes()                              // CD-CO2 step 4
+
+        var board = Board.generateBoard(words: Array(words.prefix(25)), keyCard: keyCard) // CD-CO2 steps 2-3
+        guard validateBoard(&board) else { return nil }        // CD-CO3
+        return (board, keyCard)
     }
 
     // Class Diagram (initializeGameState), CD-CO4, SSD-1 step 3
@@ -128,6 +179,9 @@ final class GameController: ObservableObject {
             }
             currentGame = game
             errorMessage = nil
+
+            // Iteration 3 - from SSD-9 step 4 (significantStateChanged → saveAfterStateChange)
+            saveAfterStateChange()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -142,6 +196,9 @@ final class GameController: ObservableObject {
 
         resolveGuess(game: &game, cardId: cardId)              // CD-CO7 step 2 (delegateToResolve)
         currentGame = game
+
+        // Iteration 3 - from SSD-9 step 4 (significantStateChanged → saveAfterStateChange)
+        saveAfterStateChange()
     }
 
     // Class Diagram (passGuessing), CD-CO8, SSD-2 step 2.2
@@ -153,6 +210,9 @@ final class GameController: ObservableObject {
         game.turnState.passGuessing()                          // CD-CO8 step 1 (setGuessesRemaining(0))
         endTurn(game: &game)                                   // CD-CO8 step 2
         currentGame = game
+
+        // Iteration 3 - from SSD-9 step 4 (significantStateChanged → saveAfterStateChange)
+        saveAfterStateChange()
     }
 
     // Class Diagram (endTurn), CD-CO9, SSD-2 step 3
@@ -215,6 +275,9 @@ final class GameController: ObservableObject {
             openHowToPlay()
         case "settings":
             openSettings()
+        // Iteration 3 - from UC-11 View About Information, CD-CO38
+        case "about":
+            openAbout()
         default:
             uiManager.navigateTo(screen: option.destination)
         }
@@ -289,12 +352,15 @@ final class GameController: ObservableObject {
         uiManager.confirmQuit(confirmation: confirmation)
         if confirmation {
             if var game = currentGame {
-                game.discardSession()                          // CD-CO33 step 1
-                game.turnState.clearState()                    // CD-CO33 step 2
+                game.discardSession()                          // CD-CO33 steps 1-2 (includes clearState)
                 currentGame = game
             }
             currentGame = nil
             errorMessage = nil
+
+            // Iteration 3 - from CD-CO37 (delete save on quit)
+            persistenceManager.deleteSaveFile()
+
             uiManager.navigateToMainMenu()                     // CD-CO33 step 3
         }
     }
@@ -387,5 +453,141 @@ final class GameController: ObservableObject {
         game.incrementTurn()                                   // CD-CO9 step 3
         uiManager.displayTeamIndicator(team: game.turnState.activeTeam)
         uiManager.navigateToSpymasterView()
+    }
+
+    // MARK: - Iteration 3 Methods
+
+    // Iteration 3 - from UC-09 Save Game State Automatically
+    // Iteration 3 - from SSD-9 Save Game State Automatically
+    // Iteration 3 - from CD-CO34 autoSaveGameState
+    func autoSaveGameState() {
+        guard let game = currentGame else { return }
+        guard !game.isGameOver else { return }
+        persistenceManager.autoSaveGameState(game: game)       // CD-CO34 steps 1.1-1.4
+    }
+
+    // Iteration 3 - from UC-09 Save Game State Automatically
+    // Iteration 3 - from SSD-9 Save Game State Automatically
+    // Iteration 3 - from CD-CO35 saveAfterStateChange
+    func saveAfterStateChange() {
+        guard let game = currentGame else { return }
+        guard !game.isGameOver else { return }
+        persistenceManager.saveAfterStateChange(game: game)    // CD-CO35 steps 1.1-1.2
+    }
+
+    // Iteration 3 - from UC-10 Restore Game After Termination
+    // Iteration 3 - from SSD-10 Restore Game After Termination
+    // Iteration 3 - from CD-CO36 restoreSavedGame
+    func restoreSavedGame() {
+        uiManager.dismissResumePrompt()
+
+        guard let savedGame = persistenceManager.readSaveFile() else {     // CD-CO36 step 1.1 (readSaveFile)
+            displayMainMenu()
+            return
+        }
+
+        guard persistenceManager.validateChecksum(savedGame) else {
+            handleCorruptedSave()                                           // SSD-10 alt [save data valid]
+            return
+        }
+
+        guard let game = savedGame.saveState.rebuildGame() else {           // CD-CO36 steps 1.2-1.4
+            handleCorruptedSave()
+            return
+        }
+
+        currentGame = game                                                  // CD-CO36 (association formed)
+        errorMessage = nil
+        displayGameBoard()                                                  // CD-CO36 step 1.5
+    }
+
+    // Iteration 3 - from UC-10 Restore Game After Termination
+    // Iteration 3 - from SSD-10 Restore Game After Termination
+    // Iteration 3 - from CD-CO37 discardSavedGame
+    func discardSavedGame() {
+        uiManager.dismissResumePrompt()
+        persistenceManager.deleteSaveFile()                                 // CD-CO37 step 1.1 (deleteSaveFile)
+        uiManager.navigateToMainMenu()                                      // CD-CO37 step 1.2
+    }
+
+    // Iteration 3 - from UC-11 View About Information
+    // Iteration 3 - from SSD-11 View About Information
+    // Iteration 3 - from CD-CO38 openAbout
+    func openAbout() {
+        uiManager.openAbout()                                               // CD-CO38 step 1
+    }
+
+    // Iteration 3 - from UC-11 View About Information
+    // Iteration 3 - from SSD-11 View About Information
+    // Iteration 3 - from CD-CO39 displayAboutInfo
+    func displayAboutInfo() {
+        let metadata = AppMetadata.fromBundle()
+        let info = AboutInfo(
+            appName: "Codenames",
+            version: metadata.version,                                      // CD-CO39 step 1.1 (getVersion)
+            buildNumber: metadata.buildNumber,
+            credits: "Antonio Moriello, Han Yue, Apostolos Tsouroupakis",   // CD-CO39 step 1.2 (getCredits)
+            copyright: "© 2026 Codenames Team",
+            legalNotice: "Codenames is based on the board game by Vlaada Chvátil."
+        )
+        uiManager.displayAboutScreen(info: info)                            // CD-CO39 step 1.3
+    }
+
+    // Iteration 3 - from UC-12 Handle Error Recovery
+    // Iteration 3 - from SSD-12 Handle Error Recovery
+    // Iteration 3 - from CD-CO40 handleWordBankLoadError
+    func handleWordBankLoadError() {
+        let message = errorHandler.handleWordBankLoadError()                // CD-CO40 step 1 (logError)
+        let fallbackWords = recoveryManager.fallbackToDefaultBank()         // CD-CO40 step 1.2
+        if fallbackWords.count >= 25 {
+            wordBank.words = fallbackWords
+        } else {
+            wordBank.loadBackupWords()
+        }
+        uiManager.displayErrorDialog(message: message)                      // CD-CO40 step 1.3
+    }
+
+    // Iteration 3 - from UC-12 Handle Error Recovery
+    // Iteration 3 - from SSD-12 Handle Error Recovery
+    // Iteration 3 - from CD-CO41 handleBoardGenerationError
+    func handleBoardGenerationError() {
+        let message = errorHandler.handleBoardGenerationError()             // CD-CO41 step 1 (logError)
+        guard var game = currentGame else {
+            uiManager.displayErrorDialog(message: message)
+            uiManager.refreshCurrentScreen()
+            return
+        }
+
+        game.board.abortBoardGeneration()                                   // CD-CO41 step 1.2
+
+        if let (fallbackBoard, fallbackKeyCard) = buildValidatedBoard(
+            words: recoveryManager.fallbackToDefaultBank(),
+            startingTeam: game.keyCard.startingTeam
+        ) {
+            game.board = fallbackBoard                                      // CD-CO41 step 1.3
+            game.keyCard = fallbackKeyCard
+        }
+
+        currentGame = game
+        uiManager.displayErrorDialog(message: message)
+        displayGameBoard()                                                  // CD-CO41 step 1.4
+    }
+
+    // Iteration 3 - from UC-12 Handle Error Recovery
+    // Iteration 3 - from SSD-12 Handle Error Recovery
+    // Iteration 3 - from CD-CO42 handleCorruptedSave
+    func handleCorruptedSave() {
+        persistenceManager.deleteSaveFile()                                 // CD-CO42 step 1.1 (deleteSaveFile)
+        _ = errorHandler.handleCorruptedSave()                              // CD-CO42 step 1.2 (logError)
+        uiManager.displayCorruptedSaveMessage()                             // CD-CO42 step 1.3
+        uiManager.navigateToMainMenu()                                      // CD-CO42 step 1.4
+    }
+
+    // Iteration 3 - from UC-12 Handle Error Recovery
+    // Iteration 3 - from SSD-12 Handle Error Recovery
+    // Iteration 3 - from CD-CO43 refreshAfterUIError
+    func refreshAfterUIError() {
+        _ = errorHandler.refreshAfterUIError()                              // CD-CO43 step 1.1 (logError)
+        uiManager.refreshCurrentScreen()                                    // CD-CO43 step 1.2
     }
 }
