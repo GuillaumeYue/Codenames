@@ -9,10 +9,12 @@ import SwiftUI
 
 struct CardCellView: View {
     let card: Card
+    let isInteractive: Bool
     let onTap: () -> Void
 
     var body: some View {
         Button {
+            guard isInteractive else { return }
             onTap()
         } label: {
             ZStack {
@@ -39,8 +41,13 @@ struct CardCellView: View {
             // Use flexible height instead of fixed — let the grid decide
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .aspectRatio(1.6, contentMode: .fit)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(card.isRevealed ? revealOutlineColor : Color.clear, lineWidth: 2)
+            )
         }
-        .disabled(card.isRevealed)
+        .buttonStyle(.plain)
+        .allowsHitTesting(isInteractive)
     }
 
     private var backgroundColor: Color {
@@ -57,8 +64,17 @@ struct CardCellView: View {
         switch card.cardType {
         case .red: return GameColor.teamRed.opacity(0.6)
         case .blue: return GameColor.teamBlue.opacity(0.6)
-        case .neutral: return Color.brown.opacity(0.4)
+        case .neutral: return Color.brown.opacity(0.75)
         case .assassin: return Color.white.opacity(0.1)
+        }
+    }
+
+    private var revealOutlineColor: Color {
+        switch card.cardType {
+        case .red: return GameColor.teamRed.opacity(0.9)
+        case .blue: return GameColor.teamBlue.opacity(0.9)
+        case .neutral: return Color.brown.opacity(0.9)
+        case .assassin: return Color.white.opacity(0.6)
         }
     }
 

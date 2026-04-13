@@ -43,7 +43,7 @@ enum GameColor {
     static var cardRed: Color { Color(rgb(0.85, 0.30, 0.22)) }
 
     static var cardNeutral: Color {
-        dynamic(light: rgb(0.85, 0.81, 0.73), dark: rgb(0.76, 0.70, 0.58))
+        dynamic(light: rgb(0.74, 0.68, 0.58), dark: rgb(0.56, 0.50, 0.42))
     }
 
     static var cardAssassin: Color {

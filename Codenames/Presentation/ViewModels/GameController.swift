@@ -381,17 +381,17 @@ final class GameController: ObservableObject {
         case .red, .blue:                                      // SSD-3 [Correct Team] or [Wrong Team]
             updateBoardState(game: &game, revealed: revealed)  // SSD-3 step 5.1
 
+            if let winner = checkWinLoss(game: game) {         // also handles wrong-team guess that completes opponent words
+                setOutcome(game: &game, winningTeam: winner)
+                endGame(game: &game)
+                return
+            }
+
             let activeTeam = game.turnState.activeTeam
             let selectedTeam: TeamColor = (revealed.cardType == .red) ? .red : .blue
 
             if selectedTeam != activeTeam {                    // SSD-3 [Wrong Team]
                 endTurn(game: &game)
-                return
-            }
-
-            if let winner = checkWinLoss(game: game) {         // SSD-3 step 5.2
-                setOutcome(game: &game, winningTeam: winner)   // SSD-3 step 5.3
-                endGame(game: &game)                           // SSD-3 step 5.4
                 return
             }
 

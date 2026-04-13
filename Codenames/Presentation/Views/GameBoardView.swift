@@ -24,6 +24,11 @@ struct GameBoardView: View {
                 .onTapGesture { focusedField = nil }
 
             if let game = controller.currentGame {
+                let canSelectCards =
+                    game.turnState.turnPhase == .operative &&
+                    !game.isGameOver &&
+                    (game.turnState.guessesRemaining == -1 || game.turnState.guessesRemaining > 0)
+
                 VStack(spacing: 4) {
                     // Compact header + phase in one row
                     HStack(spacing: 0) {
@@ -49,7 +54,7 @@ struct GameBoardView: View {
                             spacing: spacing
                         ) {
                             ForEach(game.board.cards) { card in
-                                CardCellView(card: card) {
+                                CardCellView(card: card, isInteractive: canSelectCards && !card.isRevealed) {
                                     focusedField = nil
                                     controller.selectCard(cardId: card.id)
                                 }
